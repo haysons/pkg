@@ -62,14 +62,14 @@ func (el *Election) IsLeader() bool {
 	return atomic.LoadInt32(&el.isLeader) == 1
 }
 
-// Start 发起竞选，并等待出现leader，若等待时间过长将会返回错误
+// Start 发起竞选，并等待出现leader，可通过ctx结束等待
 func (el *Election) Start(ctx context.Context) error {
-	go el.run(ctx)
-	return el.waitForReady()
+	go el.run()
+	return el.waitForReady(ctx)
 }
 
 // run 发起竞选，并监听leader变化，此方法会一直阻塞，直到调用close方法
-func (el *Election) run(ctx context.Context) {
+func (el *Election) run() {
 	// 立即发起竞选
 	el.elect()
 	leaderChange := el.election.Observe(el.ctx)
@@ -91,7 +91,7 @@ func (el *Election) run(ctx context.Context) {
 			}
 			if len(resp.Kvs) > 0 {
 				curLeader := string(resp.Kvs[0].Value)
-				el.setLeader(ctx, curLeader)
+				el.setLeader(curLeader)
 				log.Info().Str("module", "election").Str("id", el.id).Str("current leader", curLeader).Msg("leader changed")
 				el.readyOnce.Do(func() {
 					// 首次监听到leader发生变化，则初始化完成
@@ -109,7 +109,7 @@ func (el *Election) run(ctx context.Context) {
 				continue
 			}
 			if resp != nil && len(resp.Kvs) > 0 {
-				el.setLeader(ctx, string(resp.Kvs[0].Value))
+				el.setLeader(string(resp.Kvs[0].Value))
 			}
 		case <-el.ctx.Done():
 			return
@@ -117,7 +117,7 @@ func (el *Election) run(ctx context.Context) {
 	}
 }
 
-func (el *Election) setLeader(_ context.Context, curLeader string) {
+func (el *Election) setLeader(curLeader string) {
 	if el.id == curLeader {
 		atomic.CompareAndSwapInt32(&el.isLeader, 0, 1)
 	} else {
@@ -134,8 +134,8 @@ func (el *Election) elect() {
 }
 
 // waitForReady 实际等待
-func (el *Election) waitForReady() error {
-	ctx, cancel := context.WithTimeout(el.ctx, 10*time.Second)
+func (el *Election) waitForReady(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	select {
 	case <-el.readyCh:
@@ -144,7 +144,7 @@ func (el *Election) waitForReady() error {
 		if err := el.Close(); err != nil {
 			return err
 		}
-		return errors.New("wait for election ready timeout")
+		return fmt.Errorf("wait for election ready failed: %w", ctx.Err())
 	}
 }
 

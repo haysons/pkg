@@ -12,10 +12,11 @@ type Config struct {
 	ConsoleColor bool   `yaml:"console_color"` // 终端打印日志时是否包含颜色
 }
 
-// defaultLogger 默认将日志打印至stdout
+// defaultLogger 默认将日志打印至stdout，使用终端格式打印，且包含颜色，性能较差，不适于线上使用
 var defaultLogger = NewZeroLogger(&Config{
-	Level:      "info",
-	ConsoleFmt: true,
+	Level:        "info",
+	ConsoleFmt:   true,
+	ConsoleColor: true,
 })
 
 func GetDefault() zerolog.Logger {

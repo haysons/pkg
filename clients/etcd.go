@@ -1,4 +1,4 @@
-package base
+package clients
 
 import (
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -15,14 +15,14 @@ type ETCDConf struct {
 // InitETCDClient 初始化etcd client，
 func InitETCDClient(conf ETCDConf) (*clientv3.Client, error) {
 	etcdConf := clientv3.Config{
-		Endpoints:            conf.Endpoints,   // 地址列表
-		AutoSyncInterval:     time.Minute,      // 若etcd出现扩缩容，间隔1分钟自动获取最新成员列表
-		DialTimeout:          5 * time.Second,  // 拨号超时时间
-		DialKeepAliveTime:    10 * time.Second, // 心跳间隔时间
-		DialKeepAliveTimeout: 3 * time.Second,  // 心跳超时时间
-		PermitWithoutStream:  true,             // 不存在活跃的stream时仍然上报心跳，目前etcd主要用于选主、配置，存在较大的空闲时间
-		Username:             conf.Username,    // 用户名
-		Password:             conf.Password,    // 密码
+		Endpoints:            conf.Endpoints,  // 地址列表
+		AutoSyncInterval:     time.Minute,     // 若etcd出现扩缩容，间隔1分钟自动获取最新成员列表
+		DialTimeout:          5 * time.Second, // 拨号超时时间
+		DialKeepAliveTime:    time.Minute,     // 心跳间隔时间
+		DialKeepAliveTimeout: 5 * time.Second, // 心跳超时时间
+		PermitWithoutStream:  true,            // 保持连接存活
+		Username:             conf.Username,   // 用户名
+		Password:             conf.Password,   // 密码
 		DialOptions:          []grpc.DialOption{grpc.WithBlock()},
 	}
 	return clientv3.New(etcdConf)
