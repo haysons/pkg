@@ -37,7 +37,7 @@ func XID() string {
 	return xid.New().String()
 }
 
-// NumericUID 基于唯一值（如自增主键）得到整型的uid，默认uid范围为位于100_000_000和099_999_999之间
+// NumericUID 基于唯一值（如自增主键）得到整型的uid，默认uid范围为位于100_000_000和999_999_999之间
 func NumericUID(id uint64) uint64 {
 	return numericUIDGenerator.Generate(id)
 }

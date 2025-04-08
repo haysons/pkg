@@ -71,7 +71,7 @@ func SanitizeDecode(encoded string, v any) error {
 var sanitizeEncoder = NewSanitizeEncoder("Lxv9frHdiqg4WDUkJY5behs8SanXT6cRPuzoG2MV7BmKCyFQN1ZjwApt3E")
 
 // SanitizeEncoder 使用msgpack对任意类型进行序列化，之后使用自定义码集的base58进行编码，如果数据不想直接展示出来，可使用这种方式
-// 进行编解码，可起到脱敏的效果，且编码出的内容比较短，注意这只起到脱敏的效果，并不是安全地加解密操作
+// 进行编解码，从而起到脱敏的效果，且编码出的内容比较短，注意这只起到脱敏的效果，并不是安全地加解密操作
 type SanitizeEncoder struct {
 	alphabet *base58.Alphabet // 编码码集
 }
