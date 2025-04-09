@@ -5,13 +5,18 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/hkdf"
+	"golang.org/x/crypto/scrypt"
+	"io"
 )
 
 // AESEncrypt 进行AES-GCM加密，nonce放置于密文之前
@@ -82,7 +87,10 @@ func PublicKeyToPEM(pubKey *rsa.PublicKey) ([]byte, error) {
 
 // PrivateKeyToPEM 私钥进行pem编码
 func PrivateKeyToPEM(privKey *rsa.PrivateKey) ([]byte, error) {
-	privKeyBytes := x509.MarshalPKCS1PrivateKey(privKey)
+	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		return nil, err
+	}
 	privPEM := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: privKeyBytes,
@@ -113,11 +121,15 @@ func PEMToPrivateKey(privPEM []byte) (*rsa.PrivateKey, error) {
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
 		return nil, errors.New("invalid private key pem")
 	}
-	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	priv, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
-	return priv, nil
+	rsaPriv, ok := priv.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("not an rsa private key")
+	}
+	return rsaPriv, nil
 }
 
 // RSAEncrypt 使用公钥进行RSA-OAEP加密
@@ -194,4 +206,54 @@ func VerifyPassword(password string, hashedPassword []byte) (bool, error) {
 	return false, err
 }
 
-// todo: 密钥派生函数 密钥拉伸函数
+// SecureRandom 生成一个加密安全伪随机数
+func SecureRandom(length int) ([]byte, error) {
+	random := make([]byte, length)
+	_, err := rand.Read(random)
+	if err != nil {
+		return nil, err
+	}
+	return random, nil
+}
+
+// DeriveKey 使用scrypt进行秘钥派生
+func DeriveKey(password, salt []byte, keyLen int) ([]byte, error) {
+	if len(salt) == 0 {
+		return nil, errors.New("salt must not be empty")
+	}
+	return scrypt.Key(password, salt, 32768, 8, 1, keyLen)
+}
+
+// StretchKey 使hkdf进行密钥拉伸，将一个低熵的秘钥拉伸为一个高质量密钥
+func StretchKey(secret, salt []byte, keyLen int) ([]byte, error) {
+	if len(salt) == 0 {
+		return nil, errors.New("salt must not be empty")
+	}
+	reader := hkdf.New(sha256.New, secret, salt, nil)
+	key := make([]byte, keyLen)
+	if _, err := io.ReadFull(reader, key); err != nil {
+		return nil, err
+	}
+	return key, nil
+}
+
+// SHA256Hash 计算数据的SHA-256哈希值
+func SHA256Hash(data []byte) []byte {
+	hash := sha256.New()
+	hash.Write(data)
+	return hash.Sum(nil)
+}
+
+// SHA1Hash 计算数据的SHA-1哈希值
+func SHA1Hash(data []byte) []byte {
+	hash := sha1.New()
+	hash.Write(data)
+	return hash.Sum(nil)
+}
+
+// MD5Hash 计算数据的MD5哈希值
+func MD5Hash(data []byte) []byte {
+	hash := md5.New()
+	hash.Write(data)
+	return hash.Sum(nil)
+}
