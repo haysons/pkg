@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/base32"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"github.com/mr-tron/base58"
 	"github.com/vmihailenco/msgpack/v5"
@@ -46,6 +47,30 @@ func Base58Encode(bytes []byte) string {
 // Base58Decode base58解码
 func Base58Decode(encoded string) ([]byte, error) {
 	return base58.Decode(encoded)
+}
+
+// Uint32Encode 使用小端序编码uint32
+func Uint32Encode(v uint32) []byte {
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, v)
+	return buf
+}
+
+// Uint32Decode 使用小端序解码uint32
+func Uint32Decode(bytes []byte) uint32 {
+	return binary.LittleEndian.Uint32(bytes)
+}
+
+// Uint64Encode 使用小端序编码uint64
+func Uint64Encode(v uint64) []byte {
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, v)
+	return buf
+}
+
+// Uint64Decode 使用小端序解码uint64
+func Uint64Decode(bytes []byte) uint64 {
+	return binary.LittleEndian.Uint64(bytes)
 }
 
 // MsgpackMarshal 进行msgpack序列化

@@ -3,6 +3,7 @@ module github.com/haysons/pkg
 go 1.23.0
 
 require (
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dchest/siphash v1.2.3
 	github.com/google/uuid v1.6.0
 	github.com/mr-tron/base58 v1.2.0

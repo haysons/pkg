@@ -37,12 +37,12 @@ func XID() string {
 	return xid.New().String()
 }
 
-// NumericUID 基于唯一值（如自增主键）得到整型的uid，默认uid范围为位于100_000_000和999_999_999之间
+// NumericUID 基于唯一值（如自增主键）得到整型的uid，默认uid范围位于闭区间100_000_000至999_999_999之间
 func NumericUID(id uint64) uint64 {
 	return numericUIDGenerator.Generate(id)
 }
 
-// NumericUIDNano 基于纳秒级时间戳生成整型uid，默认uid范围为位于100_000_000和999_999_999之间
+// NumericUIDNano 基于纳秒级时间戳生成整型uid，默认uid范围为位于闭区间100_000_000至999_999_999之间
 func NumericUIDNano() uint64 {
 	nano := time.Now().UnixNano()
 	return numericUIDGenerator.Generate(uint64(nano))
@@ -76,6 +76,7 @@ func NewNumericUIDGenerator(min, max, key1, key2 uint64) (*NumericUIDGenerator, 
 	}, nil
 }
 
+// Generate 基于唯一id生成数字uid，数字uid范围位于闭区间[minUID, maxUID]之间
 func (g *NumericUIDGenerator) Generate(ID uint64) uint64 {
 	var buf [8]byte
 	binary.LittleEndian.PutUint64(buf[:], ID)
